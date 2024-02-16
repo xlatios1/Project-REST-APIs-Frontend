@@ -11,12 +11,14 @@ import useNotification from '@customhooks/useNotification'
 export default function HomePage() {
 	const navigate = useNavigate()
 	const isMobile = useCustomMedia()
-	const [deleteEmp, { isSuccess: isDeleted }] = useDeleteEmployeeByIDMutation()
+	const [deleteEmp] = useDeleteEmployeeByIDMutation()
 	const [totalPage, setTotalPage] = useState(0)
-	const { data, isLoading, isSuccess } = useGetAllEmployeesQuery(undefined, { refetchOnReconnect: true })
+	const { data, isLoading, isSuccess } = useGetAllEmployeesQuery(undefined, {
+		refetchOnReconnect: true,
+	})
 
 	useEffect(() => {
-		window.location.hash = '1'
+		window.location.hash = sessionStorage.getItem('progression') || '1'
 	}, [])
 
 	useEffect(() => {
@@ -28,6 +30,7 @@ export default function HomePage() {
 	}, [isLoading, isSuccess, data])
 
 	const handleEdit = (id: number): void => {
+		sessionStorage.setItem('progression', window.location.hash.slice(1))
 		navigate(`/updateEmployee/${id}`)
 	}
 

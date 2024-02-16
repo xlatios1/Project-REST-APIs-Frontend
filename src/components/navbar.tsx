@@ -15,6 +15,7 @@ export default function NavBar({ path }: { path: string }) {
 	const isMobile = useCustomMedia()
 	const atModifingPage = (path === '/newEmployee' || path.includes('/updateEmployee'))
 	const handleAddEmployeeBtn = () => {
+		sessionStorage.setItem('progression', window.location.hash.slice(1))
 		navigate('/newEmployee')
 	}
 
