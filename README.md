@@ -4,8 +4,8 @@ A project aimed to master Redux and RTK Query Frontend techniques, using React f
 
 # Tech stack learnt:
 - TypeScript
-- React
+- Vite
+- React: Pagination, Navigations, Adaptive UI etc..
 - RTK Query
 - Redux Toolkit
-- Vite
 - Mui UI Library
