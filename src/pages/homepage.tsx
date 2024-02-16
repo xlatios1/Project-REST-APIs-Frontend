@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Grid, CircularProgress } from '@mui/material'
-import { useDeleteEmployeeByIDMutation, useGetAllEmployeesQuery } from '@slices/apiSlice'
+import { createPortal } from 'react-dom'
+import {
+	Grid,
+	CircularProgress,
+	Box,
+	Button,
+	Typography,
+	Modal,
+	Paper,
+} from '@mui/material'
+import {
+	useDeleteEmployeeByIDMutation,
+	useGetAllEmployeesQuery,
+} from '@slices/apiSlice'
 import type { EmployeeType } from '@utils/projecttypes'
 import { EmployeeDetails } from '@components/employeedetails'
 import { Pagination } from '@components/pagination'
@@ -13,6 +25,7 @@ export default function HomePage() {
 	const isMobile = useCustomMedia()
 	const [deleteEmp] = useDeleteEmployeeByIDMutation()
 	const [totalPage, setTotalPage] = useState(0)
+	const [open, setOpen] = useState(0)
 	const { data, isLoading, isSuccess } = useGetAllEmployeesQuery(undefined, {
 		refetchOnReconnect: true,
 	})
@@ -36,6 +49,7 @@ export default function HomePage() {
 
 	const handleDelete = (id: number): void => {
 		deleteEmp(id)
+		setOpen(() => 0)
 		useNotification('success', `Successfully deleted employee:${id}`, 1000)
 	}
 
@@ -46,6 +60,19 @@ export default function HomePage() {
 		} else if (target === 'previous' && data) {
 			window.location.hash = Math.max(curPage - 1, 0).toString()
 		}
+	}
+
+	const modelStyle = {
+		position: 'absolute',
+		top: '50%',
+		left: '50%',
+		transform: 'translate(-50%, -50%)',
+		width: 550,
+		bgcolor: 'background.paper',
+		border: '2px solid #000',
+		borderRadius: '10px',
+		boxShadow: 12,
+		p: 2,
 	}
 
 	return (
@@ -71,13 +98,13 @@ export default function HomePage() {
 												{...emp}
 												isLoading
 												onEdit={() => handleEdit(emp.id!)}
-												onDelete={() => handleDelete(emp.id!)}
+												onDelete={() => setOpen(() => emp.id!)}
 											></EmployeeDetails>
 										</Grid>
 									)
 							})}
 						</Grid>
-					): (
+					) : (
 						<div
 							style={{
 								display: 'flex',
@@ -100,6 +127,47 @@ export default function HomePage() {
 					onPageChange={handleChangePage}
 				></Pagination>
 			)}
+			{open &&
+				createPortal(
+					<Modal
+						open={Boolean(open)}
+						onClose={() => setOpen(0)}
+						aria-labelledby="modal-modal-title"
+						aria-describedby="modal-modal-description"
+					>
+						<Paper sx={modelStyle}>
+							<Box sx={{ textAlign: 'center' }}>
+								<Typography id="modal-modal-title" variant="h6" component="h2">
+									<strong>
+										You are about to promote an employee to client
+									</strong>
+								</Typography>
+								<Typography id="modal-modal-description" sx={{ mt: 2 }}>
+									This will delete your employee from database permanently.
+								</Typography>
+								<Typography id="modal-modal-description">
+									Are you sure?
+								</Typography>
+							</Box>
+							<Box
+								sx={{
+									display: 'flex',
+									justifyContent: 'flex-end',
+									mt: '20px',
+								}}
+							>
+								<Button onClick={() => setOpen(() => 0)}>Cancel</Button>
+								<Button
+									sx={{ ml: '10px', background: 'red', color: 'black' }}
+									onClick={() => handleDelete(open)}
+								>
+									Delete
+								</Button>
+							</Box>
+						</Paper>
+					</Modal>,
+					document.body
+				)}
 		</section>
 	)
 }
