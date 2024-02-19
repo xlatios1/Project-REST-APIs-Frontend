@@ -27,3 +27,22 @@ export default function useNotification(
 			return toast(message, toastConfig)
 	}
 }
+
+export const notificationErrorHandler = (
+	err: {
+		status: string
+		error: any
+	},
+	text: string = '',
+	duration: number = 2000
+) => {
+	if (err.status === 'FETCH_ERROR') {
+		useNotification(
+			'error',
+			`Error: Unable to establish network error`,
+			duration
+		)
+	} else {
+		useNotification('error', `Error: Unable to ${text}!`, duration)
+	}
+}

@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import useNotification from '@customhooks/useNotification'
+import useNotification, {
+	notificationErrorHandler,
+} from '@customhooks/useNotification'
 import { useNavigate } from 'react-router-dom'
-import { useGetEmployeeByIDQuery, useUpdateEmployeeMutation, useCreateEmployeeMutation } from '@slices/apiSlice'
-import { EmployeeType, EmployeeDataType, DepartmentType } from '@utils/projecttypes'
+import {
+	useGetEmployeeByIDQuery,
+	useUpdateEmployeeMutation,
+	useCreateEmployeeMutation,
+} from '@slices/apiSlice'
+import {
+	EmployeeType,
+	EmployeeDataType,
+	DepartmentType,
+} from '@utils/projecttypes'
 import { TextField, Button, MenuItem } from '@mui/material'
 
 type ModifyEmployeePage = {
@@ -15,8 +25,10 @@ export default function ModifyEmployeePage({
 	id = -1,
 }: ModifyEmployeePage) {
 	const navigate = useNavigate()
-	const [updateEmp, { isLoading: isUpdating, isSuccess: isSuccessUpdate }] = useUpdateEmployeeMutation()
-	const [createEmp, { isLoading: isCreating, isSuccess: isSuccessCreating }] = useCreateEmployeeMutation()
+	const [updateEmp, { isLoading: isUpdating, isSuccess: isSuccessUpdate }] =
+		useUpdateEmployeeMutation()
+	const [createEmp, { isLoading: isCreating, isSuccess: isSuccessCreating }] =
+		useCreateEmployeeMutation()
 	const [form, setForm] = useState({
 		name: '',
 		department: DepartmentType.PS,
@@ -58,25 +70,31 @@ export default function ModifyEmployeePage({
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
-		try {
-			if (validateForm(form)) {
-				if (text === 'Update Employee') {
-					updateEmp({ id, EmployeeData: form })
-				} else if (text === 'Add Employee') {
-					createEmp({ EmployeeData: form })
-				}
+		if (validateForm(form)) {
+			if (text === 'Update Employee') {
+				updateEmp({ id, EmployeeData: form })
+					.unwrap()
+					.then(() => {
+						useNotification('success', `Successfully ${text}!`, 2000)
+						navigate('/home')
+					})
+					.catch((err: { status: string; error: any }) => {
+						notificationErrorHandler(err, text)
+					})
+			} else if (text === 'Add Employee') {
+				createEmp({ EmployeeData: form })
+					.unwrap()
+					.then(() => {
+						useNotification('success', `Successfully ${text}!`, 2000)
+						sessionStorage.setItem('progression', '-1')
+						navigate('/home')
+					})
+					.catch((err: { status: string; error: any }) => {
+						notificationErrorHandler(err, text)
+					})
 			}
-		} catch (error) {
-			useNotification('error', `Error: Unable to ${text}`, 2000)
 		}
 	}
-
-	useEffect(() => {
-		if (isSuccessUpdate || isSuccessCreating) {
-			useNotification('success', `Successfully ${text}!`, 2000)
-			navigate('/home')
-		}
-	}, [isSuccessUpdate, isSuccessCreating])
 
 	const handleFormChanges = (e: React.ChangeEvent<HTMLInputElement>) => {
 		let value: string | number = e.target.value

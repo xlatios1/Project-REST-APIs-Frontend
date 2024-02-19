@@ -22,10 +22,12 @@ export default function HomePage() {
 		data,
 		isLoading,
 		isSuccess: isGetSuccess,
+		isError: isGetError,
 	} = useGetAllEmployeesQuery(undefined, {
 		refetchOnReconnect: true,
 	})
 
+	console.log(data, isLoading, isGetSuccess, isGetError)
 	//Handles when component mounts
 	useEffect(() => {
 		window.location.hash = sessionStorage.getItem('progression') || '1'
@@ -44,7 +46,6 @@ export default function HomePage() {
 					window.location.hash = Math.max(curPage - 1, 0).toString()
 					break
 				case 'delete':
-					console.log('Eh?', curPage, totalPage, data.length, data)
 					if (curPage > totalPage) {
 						window.location.hash = totalPage.toString()
 					}
@@ -67,11 +68,23 @@ export default function HomePage() {
 
 	//handles onSuccess of deleting employee
 	useEffect(() => {
-		if (isDeleteSuccess) {
-			useNotification('success', `Successfully deleted employee!`)
-			dispatchChangePage('delete')
+		if (data) {
+			if (isDeleteSuccess) {
+				useNotification('success', `Successfully deleted employee!`)
+				dispatchChangePage('delete')
+			}
+			if (isGetError) {
+				useNotification(
+					'error',
+					`Error: Unable to establish network error`,
+					2000
+				)
+			}
+			if (+window.location.hash.slice(1) === -1) {
+				window.location.hash = Math.ceil(data.length / 10).toString()
+			}
 		}
-	}, [data])
+	}, [data, isGetError])
 
 	return (
 		<section>
