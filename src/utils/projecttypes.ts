@@ -10,7 +10,7 @@ export type EmployeeDataType = {
 }
 
 export type EmployeeType = {
-	id?: number
+	id: number
 } & EmployeeDataType
 
 

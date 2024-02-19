@@ -31,7 +31,6 @@ export default function ModifyEmployeePage({
 		const { data, isSuccess } = useGetEmployeeByIDQuery(id)
 		useEffect(() => {
 			if (isSuccess && data) {
-				console.log('fetched successfully:', data)
 				const { id: empid, ...formDataWithoutId } = data as EmployeeType
 				setForm(formDataWithoutId)
 			}
@@ -85,7 +84,6 @@ export default function ModifyEmployeePage({
 			value = Math.abs(parseInt(value, 10)) || +form.salary
 		}
 		setForm((prev) => ({ ...prev, [e.target.name]: value }))
-		console.log(value)
 	}
 
 	return (

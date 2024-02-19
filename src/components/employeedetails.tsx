@@ -10,6 +10,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import { useIntToCurrency } from '@customhooks/useIntToCurrency'
 
 interface EmployeeDetailsProps {
+	id: number
 	name: string
 	department: string
 	salary: number
@@ -19,6 +20,7 @@ interface EmployeeDetailsProps {
 }
 
 export const EmployeeDetails = ({
+	id,
 	name,
 	department,
 	salary,
@@ -47,6 +49,7 @@ export const EmployeeDetails = ({
 					variant="h4"
 					sx={{ color: primaryColorBlue, wordBreak: 'break-word' }}
 				>
+					{/* <>{id}:</> */}
 					<strong>{name}</strong>
 				</Typography>
 				<Typography variant="h6" sx={{ color: primaryColorBlue }}>

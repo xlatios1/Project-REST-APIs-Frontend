@@ -6,7 +6,7 @@ type Pagination = {
 	totalEntries: number
 	totalPages: number
 	isMobile: boolean
-	onPageChange: (target: string) => void
+	dispatchChangePage: (target: string) => void
 }
 
 export const Pagination = ({
@@ -14,7 +14,7 @@ export const Pagination = ({
 	totalEntries,
 	totalPages,
 	isMobile,
-	onPageChange,
+	dispatchChangePage,
 }: Pagination) => {
 	const paginationStyle = {
 		display: 'flex',
@@ -22,7 +22,7 @@ export const Pagination = ({
 		fontSize: '20px',
 		justifyContent: isMobile ? 'flex-end' : 'space-between',
 		margin: isMobile ? '10px 20px 0' : '10px 30px 0',
-		height: "47px"
+		height: '47px',
 	}
 
 	const buttonStyle = (isEnabled: boolean) => {
@@ -54,8 +54,8 @@ export const Pagination = ({
 					}}
 				>
 					<Button
-						onClick={() => onPageChange('previous')}
-						style={buttonStyle(currentPage === 1)}
+						onClick={() => dispatchChangePage('previous')}
+						sx={buttonStyle(currentPage === 1)}
 						disabled={currentPage === 1}
 					>
 						Previous
@@ -66,8 +66,8 @@ export const Pagination = ({
 						<strong>{currentPage}</strong>
 					</div>
 					<Button
-						onClick={() => onPageChange('next')}
-						style={buttonStyle(currentPage === totalPages)}
+						onClick={() => dispatchChangePage('next')}
+						sx={buttonStyle(currentPage === totalPages)}
 						disabled={currentPage === totalPages}
 					>
 						Next

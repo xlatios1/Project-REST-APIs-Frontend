@@ -1,37 +1,43 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { EmployeeDataType } from '@utils/projecttypes'
+import type { EmployeeDataType, EmployeeType } from '@utils/projecttypes'
 
 export const employeeApi = createApi({
 	reducerPath: 'employeeApi',
 	baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_EMPLOYEE_API }),
 	tagTypes: ['Employee'],
 	endpoints: (builder) => ({
-		getAllEmployees: builder.query<EmployeeDataType[], void>({
+		getAllEmployees: builder.query<EmployeeType[], void>({
 			query: () => `employee`,
-            providesTags: ['Employee'],
-		}),
-        
-		getEmployeeByID: builder.query<EmployeeDataType, number>({
-            query: (id) => `employee/${id}`,
-            providesTags: ['Employee'],
+			providesTags: ['Employee'],
 		}),
 
-		createEmployee: builder.mutation<EmployeeDataType, { EmployeeData: EmployeeDataType }>({
+		getEmployeeByID: builder.query<EmployeeType, number>({
+			query: (id) => `employee/${id}`,
+			providesTags: ['Employee'],
+		}),
+
+		createEmployee: builder.mutation<
+			EmployeeType,
+			{ EmployeeData: EmployeeDataType }
+		>({
 			query: ({ EmployeeData }) => ({
 				url: `/employee`,
 				method: 'POST',
 				body: EmployeeData,
 			}),
-            invalidatesTags: ['Employee'],
+			invalidatesTags: ['Employee'],
 		}),
 
-		updateEmployee: builder.mutation<EmployeeDataType, { id: number; EmployeeData: EmployeeDataType }>({
+		updateEmployee: builder.mutation<
+			EmployeeType,
+			{ id: number; EmployeeData: EmployeeDataType }
+		>({
 			query: ({ id, EmployeeData }) => ({
 				url: `/employee/${id}`,
 				method: 'PUT',
 				body: EmployeeData,
 			}),
-            invalidatesTags: ['Employee'],
+			invalidatesTags: ['Employee'],
 		}),
 
 		//mutation is for creating, updating, or deleting
@@ -40,7 +46,7 @@ export const employeeApi = createApi({
 				url: `employee/${id}`,
 				method: 'DELETE',
 			}),
-            invalidatesTags: ['Employee'],
+			invalidatesTags: ['Employee'],
 		}),
 	}),
 })

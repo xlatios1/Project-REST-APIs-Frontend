@@ -12,7 +12,6 @@ export default function ProtectedRoute({ path }: ProtectedRouteProps) {
 	let { id } = useParams();
 
 	if (path.includes('/updateEmployee/') && !(+Number(id) > 0)) {
-		console.log("Update Employee: Invalid employee ID")
 		return <NotFound></NotFound>
 	}
 

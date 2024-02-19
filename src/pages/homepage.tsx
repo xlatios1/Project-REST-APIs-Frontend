@@ -1,15 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createPortal } from 'react-dom'
-import {
-	Grid,
-	CircularProgress,
-	Box,
-	Button,
-	Typography,
-	Modal,
-	Paper,
-} from '@mui/material'
+import { Grid, CircularProgress } from '@mui/material'
 import {
 	useDeleteEmployeeByIDMutation,
 	useGetAllEmployeesQuery,
@@ -19,67 +10,74 @@ import { EmployeeDetails } from '@components/employeedetails'
 import { Pagination } from '@components/pagination'
 import { useCustomMedia } from '@customhooks/useCustomMedia'
 import useNotification from '@customhooks/useNotification'
+import ModalForm from '@components/modelform'
 
 export default function HomePage() {
 	const navigate = useNavigate()
 	const isMobile = useCustomMedia()
-	const [deleteEmp] = useDeleteEmployeeByIDMutation()
-	const [totalPage, setTotalPage] = useState(0)
+	const [deleteEmp, { isSuccess: isDeleteSuccess }] =
+		useDeleteEmployeeByIDMutation()
 	const [open, setOpen] = useState(0)
-	const { data, isLoading, isSuccess } = useGetAllEmployeesQuery(undefined, {
+	const {
+		data,
+		isLoading,
+		isSuccess: isGetSuccess,
+	} = useGetAllEmployeesQuery(undefined, {
 		refetchOnReconnect: true,
 	})
 
+	//Handles when component mounts
 	useEffect(() => {
 		window.location.hash = sessionStorage.getItem('progression') || '1'
 	}, [])
 
-	useEffect(() => {
-		console.time('filter array')
-		if (!isLoading && isSuccess && Array.isArray(data)) {
-			setTotalPage(Math.ceil(data!.length / 10))
+	//Handles pagination navigation on changes
+	const dispatchChangePage = (target: string): void => {
+		if (data) {
+			let curPage = +window.location.hash.slice(1)
+			const totalPage = Math.ceil(data.length / 10)
+			switch (target) {
+				case 'next':
+					window.location.hash = Math.min(curPage + 1, totalPage).toString()
+					break
+				case 'previous':
+					window.location.hash = Math.max(curPage - 1, 0).toString()
+					break
+				case 'delete':
+					console.log('Eh?', curPage, totalPage, data.length, data)
+					if (curPage > totalPage) {
+						window.location.hash = totalPage.toString()
+					}
+					break
+			}
 		}
-		console.timeEnd('filter array')
-	}, [isLoading, isSuccess, data])
+	}
 
+	//handles editing of employee
 	const handleEdit = (id: number): void => {
 		sessionStorage.setItem('progression', window.location.hash.slice(1))
 		navigate(`/updateEmployee/${id}`)
 	}
 
-	const handleDelete = (id: number): void => {
-		deleteEmp(id)
-		setOpen(() => 0)
-		useNotification('success', `Successfully deleted employee:${id}`, 1000)
+	//handles deleting of employee
+	const handleDelete = async (id: number): Promise<void> => {
+		await deleteEmp(id)
+		setOpen(0)
 	}
 
-	const handleChangePage = (target: string): void => {
-		let curPage = +window.location.hash.slice(1)
-		if (target === 'next' && data) {
-			window.location.hash = Math.min(curPage + 1, totalPage).toString()
-		} else if (target === 'previous' && data) {
-			window.location.hash = Math.max(curPage - 1, 0).toString()
+	//handles onSuccess of deleting employee
+	useEffect(() => {
+		if (isDeleteSuccess) {
+			useNotification('success', `Successfully deleted employee!`)
+			dispatchChangePage('delete')
 		}
-	}
-
-	const modelStyle = {
-		position: 'absolute',
-		top: '50%',
-		left: '50%',
-		transform: 'translate(-50%, -50%)',
-		width: 550,
-		bgcolor: 'background.paper',
-		border: '2px solid #000',
-		borderRadius: '10px',
-		boxShadow: 12,
-		p: 2,
-	}
+	}, [data])
 
 	return (
 		<section>
 			<div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
 				<div style={{ width: '90%' }}>
-					{data ? (
+					{!isLoading && data ? (
 						<Grid container marginTop="20px" spacing={3}>
 							{data.map((emp: EmployeeType, index: number) => {
 								let curPage = +window.location.hash.slice(1)
@@ -97,8 +95,8 @@ export default function HomePage() {
 											<EmployeeDetails
 												{...emp}
 												isLoading
-												onEdit={() => handleEdit(emp.id!)}
-												onDelete={() => setOpen(() => emp.id!)}
+												onEdit={() => handleEdit(emp.id)}
+												onDelete={() => setOpen(() => emp.id)}
 											></EmployeeDetails>
 										</Grid>
 									)
@@ -118,56 +116,20 @@ export default function HomePage() {
 					)}
 				</div>
 			</div>
-			{isSuccess && (
+			{isGetSuccess && (
 				<Pagination
 					currentPage={+window.location.hash.slice(1)}
 					totalEntries={data.length}
-					totalPages={totalPage}
+					totalPages={Math.ceil(data?.length / 10)}
 					isMobile={isMobile}
-					onPageChange={handleChangePage}
+					dispatchChangePage={dispatchChangePage}
 				></Pagination>
 			)}
-			{open &&
-				createPortal(
-					<Modal
-						open={Boolean(open)}
-						onClose={() => setOpen(0)}
-						aria-labelledby="modal-modal-title"
-						aria-describedby="modal-modal-description"
-					>
-						<Paper sx={modelStyle}>
-							<Box sx={{ textAlign: 'center' }}>
-								<Typography id="modal-modal-title" variant="h6" component="h2">
-									<strong>
-										You are about to promote an employee to client
-									</strong>
-								</Typography>
-								<Typography id="modal-modal-description" sx={{ mt: 2 }}>
-									This will delete your employee from database permanently.
-								</Typography>
-								<Typography id="modal-modal-description">
-									Are you sure?
-								</Typography>
-							</Box>
-							<Box
-								sx={{
-									display: 'flex',
-									justifyContent: 'flex-end',
-									mt: '20px',
-								}}
-							>
-								<Button onClick={() => setOpen(() => 0)}>Cancel</Button>
-								<Button
-									sx={{ ml: '10px', background: 'red', color: 'black' }}
-									onClick={() => handleDelete(open)}
-								>
-									Delete
-								</Button>
-							</Box>
-						</Paper>
-					</Modal>,
-					document.body
-				)}
+			<ModalForm
+				open={open}
+				handleClose={() => setOpen(0)}
+				handleDelete={() => handleDelete(open)}
+			></ModalForm>
 		</section>
 	)
 }
