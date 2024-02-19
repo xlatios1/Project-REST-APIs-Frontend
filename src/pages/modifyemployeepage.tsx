@@ -81,7 +81,7 @@ export default function ModifyEmployeePage({
 	const handleFormChanges = (e: React.ChangeEvent<HTMLInputElement>) => {
 		let value: string | number = e.target.value
 		if (e.target.name === 'salary') {
-			value = Math.abs(parseInt(value, 10)) || +form.salary
+			value = Math.abs(parseInt(value, 10)) || form.salary
 		}
 		setForm((prev) => ({ ...prev, [e.target.name]: value }))
 	}
@@ -131,7 +131,7 @@ export default function ModifyEmployeePage({
 					label="salary"
 					name="salary"
 					onChange={handleFormChanges}
-					value={form.salary}
+					value={form.salary.toString()}
 					fullWidth
 					required
 					helperText={
