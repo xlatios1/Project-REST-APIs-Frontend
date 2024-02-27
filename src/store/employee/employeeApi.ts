@@ -16,6 +16,11 @@ export const employeeApi = createApi({
 			providesTags: ['Employee'],
 		}),
 
+		getEmployeeByPage: builder.query<EmployeeType[], number>({
+			query: (id) => ({ url: `employee/${id}`, method: 'POST' }),
+			providesTags: ['Employee'],
+		}),
+
 		createEmployee: builder.mutation<
 			EmployeeType,
 			{ EmployeeData: EmployeeDataType }
@@ -54,6 +59,7 @@ export const employeeApi = createApi({
 export const {
 	useGetAllEmployeesQuery,
 	useGetEmployeeByIDQuery,
+	useGetEmployeeByPageQuery,
 	useCreateEmployeeMutation,
 	useUpdateEmployeeMutation,
 	useDeleteEmployeeByIDMutation,

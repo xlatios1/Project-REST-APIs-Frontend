@@ -1,51 +1,33 @@
 import Button from '@mui/material/Button'
-import { primaryColorBlue, secondaryColorGray } from '@utils/projectstyles'
+import {
+	primaryColorBlue,
+	paginationButtonStyle,
+	paginationStyle,
+} from '@utils/projectstyles'
+import { useCustomMedia } from '@customhooks/useCustomMedia'
+import { useSelector } from 'react-redux'
+import { getPaginationDetails } from '@store/pagination/pageSlice'
 
 type Pagination = {
-	currentPage: number
-	totalEntries: number
-	totalPages: number
-	isMobile: boolean
 	dispatchChangePage: (target: string) => void
 }
 
-export const Pagination = ({
-	currentPage,
-	totalEntries,
-	totalPages,
-	isMobile,
-	dispatchChangePage,
-}: Pagination) => {
-	const paginationStyle = {
-		display: 'flex',
-		alignItems: 'center',
-		fontSize: '20px',
-		justifyContent: isMobile ? 'flex-end' : 'space-between',
-		margin: isMobile ? '10px 20px 0' : '10px 30px 0',
-		height: '47px',
-	}
-
-	const buttonStyle = (isEnabled: boolean) => {
-		return {
-			fontWeight: 'bold',
-			fontSize: '20px',
-			color: isEnabled ? secondaryColorGray : primaryColorBlue,
-			textTransform: 'none',
-		}
-	}
+export const Pagination = ({ dispatchChangePage }: Pagination) => {
+	const isMobile = useCustomMedia()
+	const paginationDetails = useSelector(getPaginationDetails)
 
 	return (
-		<div style={paginationStyle}>
+		<div style={paginationStyle(isMobile)}>
 			{!isMobile && (
 				<div style={{ color: primaryColorBlue }}>
 					Showing
 					<strong>
-						{` ${(currentPage - 1) * 10 + 1}-${Math.min(currentPage * 10, totalEntries)} `}
+						{` ${(paginationDetails.currentPage - 1) * 10 + 1}-${Math.min(paginationDetails.currentPage * 10, paginationDetails.totalEntries)} `}
 					</strong>
-					out of <strong>{totalEntries}</strong> entries
+					out of <strong>{paginationDetails.totalEntries}</strong> entries
 				</div>
 			)}
-			{totalEntries > 10 && (
+			{paginationDetails.totalEntries > 10 && (
 				<div
 					style={{
 						display: 'flex',
@@ -55,20 +37,24 @@ export const Pagination = ({
 				>
 					<Button
 						onClick={() => dispatchChangePage('previous')}
-						sx={buttonStyle(currentPage === 1)}
-						disabled={currentPage === 1}
+						sx={paginationButtonStyle(paginationDetails.currentPage === 1)}
+						disabled={paginationDetails.currentPage === 1}
 					>
 						Previous
 					</Button>
 					<div
 						style={{ display: 'flex', alignItems: 'center', margin: '0 20px' }}
 					>
-						<strong>{currentPage}</strong>
+						<strong>{paginationDetails.currentPage}</strong>
 					</div>
 					<Button
 						onClick={() => dispatchChangePage('next')}
-						sx={buttonStyle(currentPage === totalPages)}
-						disabled={currentPage === totalPages}
+						sx={paginationButtonStyle(
+							paginationDetails.currentPage === paginationDetails.totalPages
+						)}
+						disabled={
+							paginationDetails.currentPage === paginationDetails.totalPages
+						}
 					>
 						Next
 					</Button>

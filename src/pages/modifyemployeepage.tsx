@@ -7,13 +7,20 @@ import {
 	useGetEmployeeByIDQuery,
 	useUpdateEmployeeMutation,
 	useCreateEmployeeMutation,
-} from '@slices/apiSlice'
+} from '@store/employee/employeeApi'
 import {
 	EmployeeType,
 	EmployeeDataType,
 	DepartmentType,
 } from '@utils/projecttypes'
 import { TextField, Button, MenuItem } from '@mui/material'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+	getPaginationDetails,
+	setCurrentPage,
+	setTotalEntries,
+	setTotalPages,
+} from '@store/pagination/pageSlice'
 
 type ModifyEmployeePage = {
 	text: string
@@ -25,10 +32,11 @@ export default function ModifyEmployeePage({
 	id = -1,
 }: ModifyEmployeePage) {
 	const navigate = useNavigate()
-	const [updateEmp, { isLoading: isUpdating, isSuccess: isSuccessUpdate }] =
-		useUpdateEmployeeMutation()
-	const [createEmp, { isLoading: isCreating, isSuccess: isSuccessCreating }] =
-		useCreateEmployeeMutation()
+	const [updateEmp] = useUpdateEmployeeMutation()
+	const [createEmp] = useCreateEmployeeMutation()
+	const dispatch = useDispatch()
+	const page = useSelector(getPaginationDetails)
+
 	const [form, setForm] = useState({
 		name: '',
 		department: DepartmentType.PS,
@@ -86,7 +94,9 @@ export default function ModifyEmployeePage({
 					.unwrap()
 					.then(() => {
 						useNotification('success', `Successfully ${text}!`, 2000)
-						sessionStorage.setItem('progression', '-1')
+						dispatch(setTotalEntries(page.totalEntries + 1))
+						dispatch(setTotalPages(Math.ceil((page.totalEntries + 1) / 10)))
+						dispatch(setCurrentPage(Math.ceil((page.totalEntries + 1) / 10)))
 						navigate('/home')
 					})
 					.catch((err: { status: string; error: any }) => {

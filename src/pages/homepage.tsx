@@ -1,100 +1,111 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Grid, CircularProgress } from '@mui/material'
+import { Grid, CircularProgress, Box } from '@mui/material'
 import {
-	useDeleteEmployeeByIDMutation,
 	useGetAllEmployeesQuery,
-} from '@slices/apiSlice'
+	useGetEmployeeByPageQuery,
+} from '@store/employee/employeeApi'
 import type { EmployeeType } from '@utils/projecttypes'
 import { EmployeeDetails } from '@components/employeedetails'
 import { Pagination } from '@components/pagination'
 import { useCustomMedia } from '@customhooks/useCustomMedia'
 import useNotification from '@customhooks/useNotification'
-import ModalForm from '@components/modelform'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+	getPaginationDetails,
+	setCurrentPage,
+	setTotalEntries,
+	setTotalPages,
+} from '@store/pagination/pageSlice'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 export default function HomePage() {
+	const paginationDetails = useSelector(getPaginationDetails)
 	const navigate = useNavigate()
+	const dispatch = useDispatch()
 	const isMobile = useCustomMedia()
-	const [deleteEmp, { isSuccess: isDeleteSuccess }] =
-		useDeleteEmployeeByIDMutation()
-	const [open, setOpen] = useState(0)
+	const location = useLocation()
+	const { data: allData, isError: isGetAllError } = useGetAllEmployeesQuery()
 	const {
-		data,
-		isLoading,
-		isSuccess: isGetSuccess,
-		isError: isGetError,
-	} = useGetAllEmployeesQuery(undefined, {
-		refetchOnReconnect: true,
-	})
+		data: pageData,
+		isLoading: isLoadingPageData,
+		isError: isGetPageDataError,
+		isSuccess: isGetPageDataSuccess,
+	} = useGetEmployeeByPageQuery(paginationDetails.currentPage)
 
-	console.log(data, isLoading, isGetSuccess, isGetError)
 	//Handles when component mounts
 	useEffect(() => {
-		window.location.hash = sessionStorage.getItem('progression') || '1'
-	}, [])
+		if (allData) {
+			dispatch(setTotalEntries(allData.length))
+			dispatch(setTotalPages(Math.ceil(allData.length / 10)))
+			let urlSearch = new URLSearchParams(location.search).get('page')
+			if (
+				!(
+					urlSearch &&
+					0 < +urlSearch &&
+					+urlSearch <= Math.ceil(allData.length / 10)
+				)
+			) {
+				urlSearch = paginationDetails.currentPage.toString()
+			} else {
+				dispatch(setCurrentPage(+urlSearch))
+			}
+			navigate(`/home?page=${urlSearch}`)
+		}
+	}, [allData])
 
 	//Handles pagination navigation on changes
 	const dispatchChangePage = (target: string): void => {
-		if (data) {
-			let curPage = +window.location.hash.slice(1)
-			const totalPage = Math.ceil(data.length / 10)
-			switch (target) {
-				case 'next':
-					window.location.hash = Math.min(curPage + 1, totalPage).toString()
-					break
-				case 'previous':
-					window.location.hash = Math.max(curPage - 1, 0).toString()
-					break
-				case 'delete':
-					if (curPage > totalPage) {
-						window.location.hash = totalPage.toString()
-					}
-					break
-			}
+		let newPage = paginationDetails.currentPage
+		switch (target) {
+			case 'next':
+				newPage += 1
+				dispatch(setCurrentPage(newPage))
+				navigate(`/home?page=${newPage}`)
+				break
+			case 'previous':
+				newPage -= 1
+				dispatch(setCurrentPage(newPage))
+				navigate(`/home?page=${newPage}`)
+				break
+			case 'delete':
+				const newTotalEntries = paginationDetails.totalEntries - 1
+				dispatch(setTotalEntries(newTotalEntries))
+				dispatch(setTotalPages(Math.ceil(newTotalEntries / 10)))
+				dispatch(
+					setCurrentPage(
+						Math.min(
+							Math.ceil(newTotalEntries / 10),
+							paginationDetails.currentPage
+						)
+					)
+				)
+				break
 		}
-	}
-
-	//handles editing of employee
-	const handleEdit = (id: number): void => {
-		sessionStorage.setItem('progression', window.location.hash.slice(1))
-		navigate(`/updateEmployee/${id}`)
-	}
-
-	//handles deleting of employee
-	const handleDelete = async (id: number): Promise<void> => {
-		await deleteEmp(id)
-		setOpen(0)
 	}
 
 	//handles onSuccess of deleting employee
 	useEffect(() => {
-		if (data) {
-			if (isDeleteSuccess) {
-				useNotification('success', `Successfully deleted employee!`)
-				dispatchChangePage('delete')
-			}
-			if (isGetError) {
+		if (allData && allData.length > 0) {
+			if (isGetPageDataError || isGetAllError) {
 				useNotification(
 					'error',
 					`Error: Unable to establish network error`,
 					2000
 				)
 			}
-			if (+window.location.hash.slice(1) === -1) {
-				window.location.hash = Math.ceil(data.length / 10).toString()
-			}
 		}
-	}, [data, isGetError])
+	}, [isGetPageDataError, isGetAllError, allData])
 
 	return (
 		<section>
-			<div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-				<div style={{ width: '90%' }}>
-					{!isLoading && data ? (
-						<Grid container marginTop="20px" spacing={3}>
-							{data.map((emp: EmployeeType, index: number) => {
-								let curPage = +window.location.hash.slice(1)
-								if ((curPage - 1) * 10 <= index && index < curPage * 10)
+			{!isLoadingPageData && isGetPageDataSuccess ? (
+				<div
+					style={{ display: 'flex', justifyContent: 'center', width: '100%' }}
+				>
+					{allData && allData.length > 0 ? (
+						<div style={{ width: '90%' }}>
+							<Grid container marginTop="20px" spacing={3}>
+								{pageData?.map((emp: EmployeeType, index: number) => {
 									return (
 										<Grid
 											item
@@ -108,41 +119,32 @@ export default function HomePage() {
 											<EmployeeDetails
 												{...emp}
 												isLoading
-												onEdit={() => handleEdit(emp.id)}
-												onDelete={() => setOpen(() => emp.id)}
+												dispatchChangePage={dispatchChangePage}
 											></EmployeeDetails>
 										</Grid>
 									)
-							})}
-						</Grid>
-					) : (
-						<div
-							style={{
-								display: 'flex',
-								width: '100%',
-								justifyContent: 'center',
-								marginTop: '30px',
-							}}
-						>
-							<CircularProgress color="inherit" />
+								})}
+							</Grid>
+							<Pagination dispatchChangePage={dispatchChangePage}></Pagination>
 						</div>
+					) : (
+						<Box display="flex" alignItems="center" height="calc(100vh - 64px)">
+							No employee present! Start hiring~ ^^{' '}
+						</Box>
 					)}
 				</div>
-			</div>
-			{isGetSuccess && (
-				<Pagination
-					currentPage={+window.location.hash.slice(1)}
-					totalEntries={data.length}
-					totalPages={Math.ceil(data?.length / 10)}
-					isMobile={isMobile}
-					dispatchChangePage={dispatchChangePage}
-				></Pagination>
+			) : (
+				<div
+					style={{
+						display: 'flex',
+						width: '100%',
+						justifyContent: 'center',
+						marginTop: '30px',
+					}}
+				>
+					<CircularProgress color="inherit" />
+				</div>
 			)}
-			<ModalForm
-				open={open}
-				handleClose={() => setOpen(0)}
-				handleDelete={() => handleDelete(open)}
-			></ModalForm>
 		</section>
 	)
 }
